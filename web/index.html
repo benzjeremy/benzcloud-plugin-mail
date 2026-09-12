@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BenzCloud Mail</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2338bdf8'><path d='M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z'/></svg>">
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-left">
+      <span class="logo-icon">📬</span>
+      <span class="brand-title">BenzCloud Mail</span>
+      <span class="brand-badge" data-i18n="badge_local">E-Mail Service</span>
+    </div>
+    <div class="header-right">
+      <div class="account-selector">
+        <label for="userSelect" data-i18n="label_user">Benutzer:</label>
+        <select id="userSelect">
+          <option value="admin">admin</option>
+        </select>
+      </div>
+      <div class="lang-switcher">
+        <button id="btnDe" class="btn-lang active">DE</button>
+        <button id="btnEn" class="btn-lang">EN</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="mail-layout">
+    <!-- Sidebar -->
+    <aside class="mail-sidebar">
+      <button id="btnCompose" class="btn btn-primary btn-compose">
+        <span>✏️</span>
+        <span data-i18n="compose_btn">Neue E-Mail</span>
+      </button>
+
+      <nav class="folder-nav">
+        <button class="nav-item active" data-folder="INBOX">
+          <span class="nav-icon">📥</span>
+          <span class="nav-label" data-i18n="folder_inbox">Posteingang</span>
+          <span id="unreadBadge" class="badge">0</span>
+        </button>
+        <button class="nav-item" data-folder="SENT">
+          <span class="nav-icon">📤</span>
+          <span class="nav-label" data-i18n="folder_sent">Gesendet</span>
+        </button>
+        <button class="nav-item" data-folder="TRASH">
+          <span class="nav-icon">🗑️</span>
+          <span class="nav-label" data-i18n="folder_trash">Papierkorb</span>
+        </button>
+      </nav>
+
+      <div class="protocol-info-card">
+        <h4 data-i18n="proto_title">Client-Verbindung</h4>
+        <p class="proto-desc" data-i18n="proto_desc">Für Thunderbird, Outlook & K-9 Mail:</p>
+        <div class="proto-row">
+          <span class="proto-tag">IMAP:</span>
+          <code id="imapPortText">1143 (Plain/SSL)</code>
+        </div>
+        <div class="proto-row">
+          <span class="proto-tag">SMTP:</span>
+          <code id="smtpPortText">1025 (Plain)</code>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Message List Column -->
+    <section class="mail-list-pane">
+      <div class="pane-header">
+        <h2 id="currentFolderName" data-i18n="folder_inbox">Posteingang</h2>
+        <button id="btnRefresh" class="btn btn-icon" title="Aktualisieren">🔄</button>
+      </div>
+      <div id="messageList" class="message-list">
+        <div class="empty-state" data-i18n="loading">Lädt Nachrichten...</div>
+      </div>
+    </section>
+
+    <!-- Message Reading Pane -->
+    <section class="mail-detail-pane" id="detailPane">
+      <div id="emptyDetail" class="empty-detail">
+        <div class="empty-icon">📨</div>
+        <p data-i18n="select_message_prompt">Wähle eine E-Mail aus, um sie zu lesen.</p>
+      </div>
+
+      <div id="activeDetail" class="active-detail" style="display: none;">
+        <div class="detail-header">
+          <div class="detail-subject-line">
+            <h3 id="detailSubject">Betreff</h3>
+            <div class="detail-actions">
+              <button id="btnReply" class="btn btn-secondary">
+                <span>↩️</span> <span data-i18n="btn_reply">Antworten</span>
+              </button>
+              <button id="btnDeleteMsg" class="btn btn-danger">
+                <span>🗑️</span> <span data-i18n="btn_delete">Löschen</span>
+              </button>
+            </div>
+          </div>
+          <div class="detail-meta">
+            <div class="meta-row">
+              <strong data-i18n="label_from">Von:</strong> <span id="detailFrom"></span>
+            </div>
+            <div class="meta-row">
+              <strong data-i18n="label_to">An:</strong> <span id="detailTo"></span>
+            </div>
+            <div class="meta-row">
+              <strong data-i18n="label_date">Datum:</strong> <span id="detailDate"></span>
+            </div>
+          </div>
+        </div>
+        <div class="detail-body" id="detailBody"></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Compose Modal -->
+  <div class="modal-overlay" id="composeModal" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 data-i18n="modal_compose_title">Neue Nachricht verfassen</h3>
+        <button id="btnModalClose" class="btn-close">&times;</button>
+      </div>
+      <form id="composeForm" class="modal-body">
+        <div class="form-group">
+          <label for="composeTo" data-i18n="label_to">Empfänger:</label>
+          <input type="email" id="composeTo" required placeholder="z. B. bob@domain.local">
+        </div>
+        <div class="form-group">
+          <label for="composeSubject" data-i18n="label_subject">Betreff:</label>
+          <input type="text" id="composeSubject" required placeholder="Betreff der Nachricht">
+        </div>
+        <div class="form-group">
+          <label for="composeBody" data-i18n="label_body">Nachricht:</label>
+          <textarea id="composeBody" rows="10" required placeholder="Deine Nachricht..."></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" id="btnCancelCompose" class="btn btn-secondary" data-i18n="btn_cancel">Abbrechen</button>
+          <button type="submit" id="btnSendMail" class="btn btn-primary">
+            <span>📤</span> <span data-i18n="btn_send">Senden</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
